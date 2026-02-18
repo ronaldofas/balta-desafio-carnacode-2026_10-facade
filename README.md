@@ -18,6 +18,81 @@ Neste processo eu aprendi:
 O processo de finalização de pedido envolve múltiplos subsistemas (estoque, pagamento, envio, notificação, cupons) cada um com interfaces complexas. 
 O cliente precisa conhecer e orquestrar todos esses sistemas, resultando em código complexo e acoplado.
 
+## Solução (Decorator Pattern)
+Para resolver o problema de acoplamento e complexidade na orquestração, utilizamos o **Padrão Decorator**.
+Este padrão estrutural permite adicionar funcionalidades a um objeto dinamicamente, "embrulhando-o" em camadas de comportamento.
+
+No nosso contexto:
+- Cada subsistema (Estoque, Pagamento, Envio) tornou-se um **Decorador**.
+- O pedido passa por um **pipeline** onde cada decorador executa sua parte e chama o próximo.
+- O cliente (`Program.cs`) apenas configura a cadeia e inicia o processo, sem conhecer os detalhes internos de cada etapa.
+
+### Passos da Refatoração
+1.  **Criação da Interface Comum**: Definimos `IOrderProcessor` para padronizar todos os processadores de pedido.
+2.  **Criação do Contexto**: Implementamos `OrderContext` para encapsular o estado do pedido (dados, totais, IDs de transação) e permitir o compartilhamento de dados entre os decoradores.
+3.  **Implementação Base**: Criamos `BaseOrderProcessor` como o componente inicial e `OrderProcessorDecorator` como a base para os decoradores.
+4.  **Encapsulamento**: Transformamos a lógica de cada subsistema em um Decorator Concreto (`InventoryDecorator`, `PaymentDecorator`, etc.).
+5.  **Novo Ponto de Entrada**: Criamos um novo `Program.cs` que monta a cadeia de decoradores e executa o fluxo.
+
+### Estrutura de Arquivos
+```text
+src/
+├── Challenge.cs           # Código legado (Subsistemas e Program antigo)
+├── IOrderProcessor.cs     # Interface comum
+├── OrderContext.cs        # Contexto de dados do pedido
+├── OrderDecorators.cs     # Classes base (BaseOrderProcessor, OrderProcessorDecorator)
+├── ConcreteDecorators.cs  # Implementações dos Decoradores (Inventory, Payment, etc.)
+└── Program.cs             # Novo ponto de entrada (Runner)
+```
+
+### Diagrama de Classes
+```mermaid
+classDiagram
+    class IOrderProcessor {
+        <<interface>>
+        +Process(OrderContext context)
+    }
+
+    class BaseOrderProcessor {
+        +Process(OrderContext context)
+    }
+
+    class OrderProcessorDecorator {
+        <<abstract>>
+        #IOrderProcessor _next
+        +Process(OrderContext context)
+    }
+
+    class InventoryDecorator {
+        +Process(OrderContext context)
+    }
+
+    class PaymentDecorator {
+        +Process(OrderContext context)
+    }
+
+    class ShippingDecorator {
+        +Process(OrderContext context)
+    }
+    
+    class CouponDecorator {
+        +Process(OrderContext context)
+    }
+
+    class NotificationDecorator {
+        +Process(OrderContext context)
+    }
+
+    IOrderProcessor <|.. BaseOrderProcessor
+    IOrderProcessor <|.. OrderProcessorDecorator
+    OrderProcessorDecorator <|-- InventoryDecorator
+    OrderProcessorDecorator <|-- PaymentDecorator
+    OrderProcessorDecorator <|-- ShippingDecorator
+    OrderProcessorDecorator <|-- CouponDecorator
+    OrderProcessorDecorator <|-- NotificationDecorator
+    OrderProcessorDecorator o-- IOrderProcessor : decorates
+```
+
 ## Sobre o CarnaCode 2026
 O desafio **CarnaCode 2026** consiste em implementar todos os 23 padrões de projeto (Design Patterns) em cenários reais. Durante os 23 desafios desta jornada, os participantes são submetidos ao aprendizado e prática na idetinficação de códigos não escaláveis e na solução de problemas utilizando padrões de mercado.
 
